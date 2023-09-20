@@ -39,7 +39,7 @@ public class MessageRequestController {
 
     @GetMapping("/{id}")
     public MessageRequest getMessageRequest(@PathVariable final String id) {
-        final Optional<MessageRequest> messageRequest = messageRequestRepository.findById(id);
+        final Optional<MessageRequest> messageRequest = messageRequestRepository.findByMessageId(id);
 
         if (messageRequest.isPresent()) {
             return messageRequest.get();

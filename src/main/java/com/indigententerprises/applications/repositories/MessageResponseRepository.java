@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface MessageResponseRepository extends JpaRepository<MessageResponse, Long> {
-    Optional<MessageResponse> findById(final String id);
+    Optional<MessageResponse> findByMessageId(final String messageId);
 }
