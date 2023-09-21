@@ -5,6 +5,7 @@ import com.indigententerprises.applications.entities.MessageResponse;
 import com.indigententerprises.applications.repositories.MessageRequestRepository;
 import com.indigententerprises.applications.repositories.MessageResponseRepository;
 
+import com.indigententerprises.applications.serviceinterfaces.DuplicateIdentifierException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,32 +47,39 @@ public class MessageRequestService implements
         return messageRequestRepository.findAll();
     }
 
-    public MessageRequest insert(final MessageRequest messageRequest) {
-        final MessageRequest result = messageRequestRepository.save(messageRequest);
+    public MessageRequest insert(final MessageRequest messageRequest) throws DuplicateIdentifierException {
+        // id must be unique
+        final Optional<MessageRequest> existingMessageRequest =
+                messageRequestRepository.findByMessageId(messageRequest.getMessageId());
+        if (existingMessageRequest.isPresent()) {
+            throw new DuplicateIdentifierException(messageRequest.getMessageId() + " already present");
+        } else {
+            final MessageRequest result = messageRequestRepository.save(messageRequest);
 
-        // executor-service represents our work queue. longer-running tasks would be better
-        //   served by a persistent distributed queue.
-        executorService.submit(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            final String messageContent = messageRequest.getMessageContent();
-                            final String output = worker.apply(messageContent);
-                            final MessageResponse messageResponse = new MessageResponse();
-                            messageResponse.setMessageId(messageRequest.getMessageId());
-                            messageResponse.setMessageHash(output);
-                            // need not return the saved object; correlation occurs through identifiers.
-                            messageResponseRepository.save(messageResponse);
-                        } catch (RuntimeException e) {
-                            // exception occurred during long-running task or during object persistence.
-                            // need to persist information about the exception; otherwise, client polls
-                            //   endlessly.
+            // executor-service represents our work queue. longer-running tasks would be better
+            //   served by a persistent distributed queue.
+            executorService.execute(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                final String messageContent = messageRequest.getMessageContent();
+                                final String output = worker.apply(messageContent);
+                                final MessageResponse messageResponse = new MessageResponse();
+                                messageResponse.setMessageId(messageRequest.getMessageId());
+                                messageResponse.setMessageHash(output);
+                                // need not return the saved object; correlation occurs through identifiers.
+                                messageResponseRepository.save(messageResponse);
+                            } catch (RuntimeException e) {
+                                // exception occurred during long-running task or during object persistence.
+                                // need to persist information about the exception; otherwise, client polls
+                                //   endlessly.
+                            }
                         }
                     }
-                }
-        );
+            );
 
-        return result;
+            return result;
+        }
     }
 }

@@ -3,7 +3,8 @@ CREATE table async.message_request
     primary_key BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
     message_id VARCHAR(36) NOT NULL,
     message_content VARCHAR(4096) NOT NULL,
-    PRIMARY KEY(primary_key)
+    PRIMARY KEY(primary_key),
+    UNIQUE(message_id)
 );
 
 CREATE TABLE async.message_response
@@ -11,5 +12,6 @@ CREATE TABLE async.message_response
     primary_key BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
     message_id VARCHAR(36) NOT NULL,
     message_hash VARCHAR(128) NOT NULL,
-    PRIMARY KEY(primary_key)
+    PRIMARY KEY(primary_key),
+    UNIQUE(message_id)
 );

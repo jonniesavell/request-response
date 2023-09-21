@@ -2,14 +2,14 @@ package com.indigententerprises.applications.rest;
 
 import com.indigententerprises.applications.entities.MessageResponse;
 
-import com.indigententerprises.applications.repositories.MessageResponseRepository;
+import com.indigententerprises.applications.serviceinterfaces.MessageResponseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
 /**
  * GET    : o
@@ -22,24 +22,24 @@ import java.util.Optional;
 @RequestMapping("/message-responses")
 public class MessageResponseController {
 
-    private final MessageResponseRepository messageResponseRepository;
+    private final MessageResponseService messageResponseService;
 
-    public MessageResponseController(final MessageResponseRepository messageResponseRepository) {
-        this.messageResponseRepository = messageResponseRepository;
+    public MessageResponseController(final MessageResponseService messageResponseService) {
+        this.messageResponseService = messageResponseService;
     }
 
-    @GetMapping("")
+    @GetMapping
     public List<MessageResponse> getMessageResponses() {
-        return messageResponseRepository.findAll();
+        return messageResponseService.findAll();
     }
 
     @GetMapping("/{id}")
     public MessageResponse getMessageResponse(@PathVariable final String id) {
-        final Optional<MessageResponse> messageResponse = messageResponseRepository.findByMessageId(id);
 
-        if (messageResponse.isPresent()) {
-            return messageResponse.get();
-        } else {
+        try {
+            final MessageResponse messageResponse = messageResponseService.findByMessageId(id);
+            return messageResponse;
+        } catch (NoSuchElementException e) {
             throw new ItemNotFoundException();
         }
     }
