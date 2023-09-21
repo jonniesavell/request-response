@@ -9,12 +9,12 @@ import java.util.function.Function;
 @Component
 public class LongRunningTaskWorker implements Function<String, String> {
 
-    // hashing is merely a simulation of a long-running request
+    // hashing is merely a simulation of a long-running process
     public String apply(final String text) {
         try {
             MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
             messageDigest.update(text.getBytes());
-            final byte[] hashedBytes = messageDigest.digest();
+            final byte [] hashedBytes = messageDigest.digest();
             final StringBuilder stringBuilder = new StringBuilder();
 
             for (final byte b : hashedBytes) {

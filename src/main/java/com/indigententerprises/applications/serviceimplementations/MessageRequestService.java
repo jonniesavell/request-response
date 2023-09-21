@@ -4,8 +4,8 @@ import com.indigententerprises.applications.entities.MessageRequest;
 import com.indigententerprises.applications.entities.MessageResponse;
 import com.indigententerprises.applications.repositories.MessageRequestRepository;
 import com.indigententerprises.applications.repositories.MessageResponseRepository;
-
 import com.indigententerprises.applications.serviceinterfaces.DuplicateIdentifierException;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -68,8 +68,14 @@ public class MessageRequestService implements
                                 final MessageResponse messageResponse = new MessageResponse();
                                 messageResponse.setMessageId(messageRequest.getMessageId());
                                 messageResponse.setMessageHash(output);
-                                // need not return the saved object; correlation occurs through identifiers.
-                                messageResponseRepository.save(messageResponse);
+
+                                try {
+                                    // need not return the saved object; correlation occurs through identifiers.
+                                    messageResponseRepository.save(messageResponse);
+                                } catch (RuntimeException e) {
+                                    // cannot inform the client directly. inform the observability platform and
+                                    //   allow ops personnel to detect the problem.
+                                }
                             } catch (RuntimeException e) {
                                 // exception occurred during long-running task or during object persistence.
                                 // need to persist information about the exception; otherwise, client polls

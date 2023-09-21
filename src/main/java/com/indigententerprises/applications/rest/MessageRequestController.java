@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
+ * not all verbs are supported:
+ *
  * GET    : o
  * POST   : X
  * PUT    : o (insert)

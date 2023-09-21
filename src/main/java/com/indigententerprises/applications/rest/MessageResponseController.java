@@ -1,8 +1,8 @@
 package com.indigententerprises.applications.rest;
 
 import com.indigententerprises.applications.entities.MessageResponse;
-
 import com.indigententerprises.applications.serviceinterfaces.MessageResponseService;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
+ * not all verbs are supported:
+ *
  * GET    : o
  * POST   : X
  * PUT    : X
