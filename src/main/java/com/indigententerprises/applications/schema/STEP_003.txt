@@ -11,7 +11,25 @@ CREATE TABLE async.message_response
 (
     primary_key BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
     message_id VARCHAR(36) NOT NULL,
-    message_hash VARCHAR(128) NOT NULL,
     PRIMARY KEY(primary_key),
     UNIQUE(message_id)
 );
+
+CREATE TABLE async.message_response_success
+(
+    primary_key BIGINT NOT NULL,
+    message_hash VARCHAR(128) NOT NULL,
+    PRIMARY KEY(primary_key),
+    FOREIGN KEY(primary_key) REFERENCES async.message_response(primary_key)
+);
+
+CREATE TABLE async.message_response_failure
+(
+    primary_key BIGINT NOT NULL,
+    code VARCHAR(128) NOT NULL,
+    message VARCHAR(256) NOT NULL,
+    details VARCHAR(1024) NULL,
+    PRIMARY KEY(primary_key),
+    FOREIGN KEY(primary_key) REFERENCES async.message_response(primary_key)
+);
+
