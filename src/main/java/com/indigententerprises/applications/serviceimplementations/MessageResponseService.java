@@ -8,6 +8,7 @@ import com.indigententerprises.applications.repositories.MessageResponseReposito
 
 import com.indigententerprises.applications.repositories.MessageResponseSuccessRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,7 @@ public class MessageResponseService
         this.messageResponseSuccessRepository = messageResponseSuccessRepository;
     }
 
+    @Transactional(readOnly=true)
     public MessageResponse findByMessageId(final String messageId) throws NoSuchElementException {
         final Optional<MessageResponse> messageResponse = messageResponseRepository.findByMessageId(messageId);
 
@@ -40,14 +42,17 @@ public class MessageResponseService
         }
     }
 
+    @Transactional(readOnly=true)
     public List<MessageResponse> findAll() {
         return messageResponseRepository.findAll();
     }
 
+    @Transactional
     public MessageResponseSuccess insert(final MessageResponseSuccess messageResponseSuccess) {
         return messageResponseSuccessRepository.save(messageResponseSuccess);
     }
 
+    @Transactional
     public MessageResponseFailure insert(final MessageResponseFailure messageResponseFailure) {
         return messageResponseFailureRepository.save(messageResponseFailure);
     }

@@ -9,5 +9,6 @@ public interface MessageRequestService {
 
     MessageRequest findByMessageId(final String messageId) throws NoSuchElementException;
     List<MessageRequest> findAll();
+    List<MessageRequest> findUnresolvedMessageRequests();
     MessageRequest insert(final MessageRequest messageRequest);
 }

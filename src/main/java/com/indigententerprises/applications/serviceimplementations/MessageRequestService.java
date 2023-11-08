@@ -9,6 +9,11 @@ import com.indigententerprises.applications.repositories.MessageResponseSuccessR
 import com.indigententerprises.applications.serviceinterfaces.DuplicateIdentifierException;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +28,7 @@ public class MessageRequestService implements
     private final MessageRequestRepository messageRequestRepository;
     private final MessageResponseFailureRepository messageResponseFailureRepository;
     private final MessageResponseSuccessRepository messageResponseSuccessRepository;
+    final private TransactionTemplate transactionTemplate;
     private final Function<String, String> worker;
     private final ExecutorService executorService;
 
@@ -30,15 +36,18 @@ public class MessageRequestService implements
             final MessageRequestRepository messageRequestRepository,
             final MessageResponseFailureRepository messageResponseFailureRepository,
             final MessageResponseSuccessRepository messageResponseSuccessRepository,
+            final PlatformTransactionManager transactionManager,
             final Function<String, String> worker
     ) {
         this.messageRequestRepository = messageRequestRepository;
         this.messageResponseFailureRepository = messageResponseFailureRepository;
         this.messageResponseSuccessRepository = messageResponseSuccessRepository;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.worker = worker;
         this.executorService = Executors.newSingleThreadExecutor();
     }
 
+    @Transactional(readOnly=true)
     public MessageRequest findByMessageId(final String messageId) throws NoSuchElementException {
         final Optional<MessageRequest> messageRequest = messageRequestRepository.findByMessageId(messageId);
         if (messageRequest.isPresent()) {
@@ -48,10 +57,17 @@ public class MessageRequestService implements
         }
     }
 
+    @Transactional(readOnly=true)
     public List<MessageRequest> findAll() {
         return messageRequestRepository.findAll();
     }
 
+    @Transactional(readOnly=true)
+    public List<MessageRequest> findUnresolvedMessageRequests() {
+        return messageRequestRepository.findUnresolvedMessageRequests();
+    }
+
+    @Transactional
     public MessageRequest insert(final MessageRequest messageRequest) throws DuplicateIdentifierException {
         // id must be unique
         final Optional<MessageRequest> existingMessageRequest =
@@ -67,38 +83,45 @@ public class MessageRequestService implements
                     new Runnable() {
                         @Override
                         public void run() {
-                            try {
-                                final String messageContent = messageRequest.getMessageContent();
-                                final String output = worker.apply(messageContent);
-                                final MessageResponseSuccess messageResponseSuccess = new MessageResponseSuccess();
-                                messageResponseSuccess.setMessageId(messageRequest.getMessageId());
-                                messageResponseSuccess.setMessageHash(output);
+                            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                                @Override
+                                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                                    try {
+                                        final String messageContent = messageRequest.getMessageContent();
+                                        final String output = worker.apply(messageContent);
+                                        final MessageResponseSuccess messageResponseSuccess = new MessageResponseSuccess();
+                                        messageResponseSuccess.setMessageId(messageRequest.getMessageId());
+                                        messageResponseSuccess.setMessageHash(output);
 
-                                try {
-                                    // need not return the saved object; correlation occurs through identifiers.
-                                    messageResponseSuccessRepository.save(messageResponseSuccess);
-                                } catch (RuntimeException e) {
-                                    // persistence failure ...
-                                    // cannot inform the client directly. inform the observability platform and
-                                    //   allow ops personnel to detect the problem.
-                                }
-                            } catch (RuntimeException e) {
-                                // exception occurred during long-running task or during object persistence.
-                                // need to persist information about the exception; otherwise, client polls
-                                //   endlessly.
-                                final MessageResponseFailure messageResponseFailure = new MessageResponseFailure();
-                                messageResponseFailure.setCode("async-operation-failure");
-                                messageResponseFailure.setMessage("background job failed");
-                                messageResponseFailure.setDetails(e.getMessage());
+                                        try {
+                                            // need not return the saved object; correlation occurs through identifiers.
+                                            messageResponseSuccessRepository.save(messageResponseSuccess);
+                                        } catch (RuntimeException e) {
+                                            // persistence failure ...
+                                            // cannot inform the client directly. inform the observability platform and
+                                            //   allow ops personnel to detect the problem.
+                                            throw e;
+                                        }
+                                    } catch (RuntimeException e) {
+                                        // exception occurred during long-running task or during object persistence.
+                                        // need to persist information about the exception; otherwise, client polls
+                                        //   endlessly.
+                                        final MessageResponseFailure messageResponseFailure = new MessageResponseFailure();
+                                        messageResponseFailure.setCode("async-operation-failure");
+                                        messageResponseFailure.setMessage("background job failed");
+                                        messageResponseFailure.setDetails(e.getMessage());
 
-                                try {
-                                    messageResponseFailureRepository.save(messageResponseFailure);
-                                } catch (RuntimeException e2) {
-                                    // persistence failure ...
-                                    // cannot inform the client directly. inform the observability platform and
-                                    //   allow ops personnel to detect the problem.
+                                        try {
+                                            messageResponseFailureRepository.save(messageResponseFailure);
+                                        } catch (RuntimeException e2) {
+                                            // persistence failure ...
+                                            // cannot inform the client directly. inform the observability platform and
+                                            //   allow ops personnel to detect the problem.
+                                            throw e2;
+                                        }
+                                    }
                                 }
-                            }
+                            });
                         }
                     }
             );
