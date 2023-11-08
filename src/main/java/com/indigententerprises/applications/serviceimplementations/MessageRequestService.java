@@ -78,6 +78,7 @@ public class MessageRequestService implements
                                     // need not return the saved object; correlation occurs through identifiers.
                                     messageResponseSuccessRepository.save(messageResponseSuccess);
                                 } catch (RuntimeException e) {
+                                    // persistence failure ...
                                     // cannot inform the client directly. inform the observability platform and
                                     //   allow ops personnel to detect the problem.
                                 }
@@ -89,7 +90,14 @@ public class MessageRequestService implements
                                 messageResponseFailure.setCode("async-operation-failure");
                                 messageResponseFailure.setMessage("background job failed");
                                 messageResponseFailure.setDetails(e.getMessage());
-                                messageResponseFailureRepository.save(messageResponseFailure);
+
+                                try {
+                                    messageResponseFailureRepository.save(messageResponseFailure);
+                                } catch (RuntimeException e2) {
+                                    // persistence failure ...
+                                    // cannot inform the client directly. inform the observability platform and
+                                    //   allow ops personnel to detect the problem.
+                                }
                             }
                         }
                     }
