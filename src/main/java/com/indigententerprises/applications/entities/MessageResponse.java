@@ -5,14 +5,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name="message_response", schema="async")
-public class MessageResponse {
+@Inheritance(strategy=InheritanceType.JOINED)
+public abstract class MessageResponse {
 
     private Long primaryKey;
-    private String messageHash;
     private String messageId;
 
     @Id
@@ -24,15 +26,6 @@ public class MessageResponse {
 
     public void setPrimaryKey(Long id) {
         this.primaryKey = id;
-    }
-
-    @Column(name="message_hash")
-    public String getMessageHash() {
-        return messageHash;
-    }
-
-    public void setMessageHash(final String messageHash) {
-        this.messageHash = messageHash;
     }
 
     @Column(name="message_id")
