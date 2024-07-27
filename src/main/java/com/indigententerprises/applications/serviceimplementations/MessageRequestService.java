@@ -28,7 +28,7 @@ public class MessageRequestService implements
     private final MessageRequestRepository messageRequestRepository;
     private final MessageResponseFailureRepository messageResponseFailureRepository;
     private final MessageResponseSuccessRepository messageResponseSuccessRepository;
-    final private TransactionTemplate transactionTemplate;
+    private final TransactionTemplate transactionTemplate;
     private final Function<String, String> worker;
     private final ExecutorService executorService;
 
