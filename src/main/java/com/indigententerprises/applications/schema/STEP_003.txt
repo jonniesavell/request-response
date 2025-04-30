@@ -7,6 +7,8 @@ CREATE table async.message_request
     UNIQUE(message_id)
 );
 
+CREATE UNIQUE INDEX message_request_msg_id_idx ON async.message_request(message_id);
+
 CREATE TABLE async.message_response
 (
     primary_key BIGINT GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -14,6 +16,8 @@ CREATE TABLE async.message_response
     PRIMARY KEY(primary_key),
     UNIQUE(message_id)
 );
+
+CREATE UNIQUE INDEX message_response_msg_id_idx ON async.message_response(message_id);
 
 CREATE TABLE async.message_response_success
 (

@@ -13,4 +13,7 @@ public interface MessageRequestRepository extends JpaRepository<MessageRequest, 
 
     @Query("select mreq from MessageRequest mreq where not exists (select 1 from MessageResponse mres where mres.messageId = mreq.messageId)")
     List<MessageRequest> findUnresolvedMessageRequests();
+
+    @Query("select mreq from MessageRequest mreq where exists (select 1 from MessageResponse mres where mres.messageId = mreq.messageId)")
+    List<MessageRequest> findResolvedMessageRequests();
 }

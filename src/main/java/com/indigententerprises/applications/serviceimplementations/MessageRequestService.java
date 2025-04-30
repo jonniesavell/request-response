@@ -67,6 +67,11 @@ public class MessageRequestService implements
         return messageRequestRepository.findUnresolvedMessageRequests();
     }
 
+    @Transactional(readOnly=true)
+    public List<MessageRequest> findResolvedMessageRequests() {
+        return messageRequestRepository.findResolvedMessageRequests();
+    }
+
     @Transactional
     public MessageRequest insert(final MessageRequest messageRequest) throws DuplicateIdentifierException {
         // id must be unique

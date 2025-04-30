@@ -1,0 +1,8 @@
+PUT http://localhost:8080/message-requests
+Content-Type: application/json
+
+{
+  "messageContent": "pants",
+  "messageId": "27dfefb4-8601-41a8-b850-b41ed67db2b7"
+}
+
